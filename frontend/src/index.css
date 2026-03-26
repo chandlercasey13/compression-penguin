@@ -1,0 +1,148 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #090b11;
+  --bg-subtle: #0d1019;
+  --surface: #111520;
+  --surface-raised: #161b28;
+  --surface-hover: #1c2233;
+  --border: #1e2435;
+  --border-subtle: #171d2c;
+  --text: #e8ebf4;
+  --text-secondary: #a0a8c0;
+  --text-muted: #636d85;
+  --primary: #6366f1;
+  --primary-hover: #5558e6;
+  --primary-muted: rgba(99, 102, 241, 0.12);
+  --primary-glow: rgba(99, 102, 241, 0.25);
+  --success: #10b981;
+  --success-muted: rgba(16, 185, 129, 0.12);
+  --error: #ef4444;
+  --error-muted: rgba(239, 68, 68, 0.1);
+  --warning: #f59e0b;
+  --accent-cyan: #06b6d4;
+  --accent-cyan-muted: rgba(6, 182, 212, 0.1);
+  --radius: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.08);
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+input, select {
+  font-family: inherit;
+  outline: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Layout */
+.page-content {
+  max-width: 1000px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header {
+  padding: 1.5rem 2rem 0 2rem;
+}
+
+.card-body {
+  padding: 1.5rem 2rem 2rem 2rem;
+}
+
+@media (max-width: 768px) {
+  .page-wrapper {
+    align-items: flex-start !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .page-content {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .nav-inner {
+    padding: 0 1rem;
+  }
+
+  .card-header {
+    padding: 1.25rem 1.25rem 0 1.25rem;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+
+  .sidebar-details {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content {
+    gap: 1.25rem;
+  }
+}

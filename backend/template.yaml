@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Compression Penguin — Lambda-driven image compression API
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Timeout: 60
+    MemorySize: 512
+    Environment:
+      Variables:
+        S3_BUCKET: !Ref ConversionBucket
+        JOBS_TABLE: !Ref JobsTable
+        ALLOWED_ORIGIN: "*"
+
+Resources:
+  # ---- S3 Bucket ----
+  ConversionBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "conversion-penguin-${AWS::AccountId}"
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ["*"]
+            AllowedMethods: [GET, PUT]
+            AllowedOrigins: ["*"]
+            MaxAge: 3600
+
+  # ---- DynamoDB Table ----
+  JobsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ConversionPenguinJobs
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # ---- API Gateway ----
+  ConversionApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Content-Type'"
+        AllowMethods: "'GET,POST,OPTIONS'"
+
+  # ---- Lambda Functions ----
+  GetUploadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-upload-url.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref ConversionBucket
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ConversionApi
+            Path: /upload-url
+            Method: POST
+
+  ListConversionTypesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/list-conversion-types.handler
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ConversionApi
+            Path: /conversion-types
+            Method: GET
+
+  CreateJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/create-job.handler
+      Environment:
+        Variables:
+          CONVERT_FUNCTION_NAME: !Ref ConvertFunction
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ConvertFunction
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ConversionApi
+            Path: /jobs
+            Method: POST
+
+  GetJobStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-job-status.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ConversionApi
+            Path: /jobs/{id}
+            Method: GET
+
+  GetDownloadUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-download-url.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref JobsTable
+        - S3ReadPolicy:
+            BucketName: !Ref ConversionBucket
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ConversionApi
+            Path: /jobs/{id}/download
+            Method: GET
+
+  ConvertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/convert.handler
+      Timeout: 120
+      MemorySize: 2048
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref JobsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ConversionBucket
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ConversionApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  BucketName:
+    Description: S3 bucket for file storage
+    Value: !Ref ConversionBucket
+  TableName:
+    Description: DynamoDB table for jobs
+    Value: !Ref JobsTable
